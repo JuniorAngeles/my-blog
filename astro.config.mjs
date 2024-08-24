@@ -5,13 +5,13 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://example.com',
-	vite: {
-		server: {
-			watch: {
-				usePolling: true,
-			}
-		}
-	},
-	integrations: [mdx(), sitemap()],
+  site: 'https://my-blog-730.pages.dev/',
+  vite: {
+    server: {
+      watch: {
+        usePolling: true,
+      },
+    },
+  },
+  integrations: [mdx(), sitemap()],
 });

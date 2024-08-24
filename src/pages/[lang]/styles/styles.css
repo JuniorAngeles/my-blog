@@ -1,0 +1,19 @@
+.p2 {
+  color: red;
+}
+
+.homeP3 {
+    color:#000000
+    font-size: 1.5rem; 
+    font-weight: bold;
+}
+
+.homeP3TitleList {
+    color:#000000
+    font-size: 1.5rem; 
+    font-weight: bold;
+}
+
+.divLisP3{
+    display: flex;
+}
