@@ -1,216 +1,69 @@
 ---
-title: 'Inventario'
-description: 'Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.'
-pubDate: 'Jul 01 2022'
-heroImage: '/blog-placeholder-1.jpg'
-author: 'Me'
+title: 'Guía de Migración de Base de Datos PostgreSQL'
+description: 'Esta guía documenta todos los pasos realizados durante la migración de la base de datos desde un archivo de respaldo hacia un servidor de PostgreSQL, incluyendo los comandos utilizados, errores comunes y sus soluciones.'
+pubDate: 'Nov 05 2024'
+heroImage: '/blog-migrate-data/migrate-data.jpg'
+author: 'Junior Ángeles'
 lang: 'es'
 ---
 
-Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astasd.
+Esta guía documenta todos los pasos realizados durante la migración de la base de datos desde un archivo de respaldo hacia un servidor de PostgreSQL, incluyendo los comandos utilizados, errores comunes y sus soluciones..
 
-## Headings
+## Preparativos iniciales
 
-The following HTML `<h1>`—`<h6>` elements represent six levels of section headings. `<h1>` is the highest section level while `<h6>` is the lowest.
+- Comprensión del archivo de copia de seguridad: la base de datos que se iba a migrar estaba en un archivo .backup, que incluía tanto la estructura como los datos de la base de datos original.
 
-# H1
+- Requisitos del sistema: asegúrese de que la máquina de destino (DigitalOcean) esté lista para recibir la base de datos y que el usuario tenga las credenciales necesarias.
 
-## H2
+## 1 Configuración de conexión en pgAdmin
 
-### H3
+- Abra pgAdmin y configure una nueva conexión al servidor de DigitalOcean:
+  - Nombre/dirección del host: dirección del host proporcionada por DigitalOcean.
+  - Puerto: Generalmente, puerto 25060 para conexiones de DigitalOcean.
+  - Nombre de usuario: doadmin (o el usuario que DigitalOcean proporcione).
+  - Contraseña: Contraseña proporcionada por DigitalOcean para este usuario.
+  - Base de datos: defaultdb (o el nombre de la base de datos a la que se migrarán los datos).
 
-#### H4
+## 2 Restauración inicial con pg_restore
 
-##### H5
+- Se intentó restaurar la base de datos usando el comando pg_restore en la línea de comando de Windows para tener más control sobre el proceso:
 
-###### H6
+  - ```markdown
+    "C:\Program Files\PostgreSQL\16\bin\pg_restore.exe" --host "db-postgresql-nyc3-34698-do-user-16477646-0.f.db.ondigitalocean.com" --port "25060" --username "doadmin" --password --dbname "defaultdb" --no-owner --no-privileges --verbose "C:\Users\Junior\OneDrive\Escritorio\backup-inventori\inventori-back-5.backup"
+    ```
 
-## Paragraph
+## 3 Errores comunes y soluciones
 
-Xerum, quo qui aut unt expliquam qui dolut labo. Aque venitatiusda cum, voluptionse latur sitiae dolessi aut parist aut dollo enim qui voluptate ma dolestendit peritin re plis aut quas inctum laceat est volestemque commosa as cus endigna tectur, offic to cor sequas etum rerum idem sintibus eiur? Quianimin porecus evelectur, cum que nis nust voloribus ratem aut omnimi, sitatur? Quiatem. Nam, omnis sum am facea corem alique molestrunt et eos evelece arcillit ut aut eos eos nus, sin conecerem erum fuga. Ri oditatquam, ad quibus unda veliamenimin cusam et facea ipsamus es exerum sitate dolores editium rerore eost, temped molorro ratiae volorro te reribus dolorer sperchicium faceata tiustia prat.
+- 3.1 Contraseña no proporcionada
 
-Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sapicia is sinveli squiatum, core et que aut hariosam ex eat.
+  - Error: pg_restore: falló la conexión al servidor: fe_sendauth: no se proporcionó contraseña
+  - Solución: utilice la opción --password sin especificar la contraseña en el comando para que pg_restore se la solicite de forma interactiva.
 
-## Images
+- 3.2 restricciones de clave principal
+  - Error: el valor de clave duplicado viola la restricción única.
+  - Solución: Usamos la opción --data-only para importar solo los datos y --disable-triggers para evitar errores relacionados con restricciones clave. Aún así, si los valores ya existen, la solución sería eliminar esos datos previamente duplicados.
 
-#### Syntax
+## 4. Comando con opciones para evitar errores duplicados
 
-```markdown
-![Alt text](./full/or/relative/path/of/image)
-```
+- ```markdown
+  "C:\Program Files\PostgreSQL\16\bin\pg_restore.exe" --host "db-postgresql-nyc3-34698-do-user-16477646-0.f.db.ondigitalocean.com" --port "25060" --username "doadmin" --password --dbname "defaultdb" --no-owner --no-privileges --data-only --disable-triggers --verbose "C:\Users\Junior\OneDrive\Escritorio\backup-inventori\inventori-back-5.backup"
+  ```
 
-#### Output
+## 5. Usando la interfaz gráfica de pgAdmin
 
-![blog placeholder](/blog-placeholder-about.jpg)
+- Abra pgAdmin: Vaya a la opción "Restaurar" desde el servidor donde desea restaurar la base de datos.
+- Seleccione el Archivo: En la pestaña "General", seleccione el archivo .backup en la opción "Nombre de archivo".
+- Opciones adicionales: En "Opciones de datos", puedes especificar que solo deseas importar los datos y desactivar las restricciones para evitar errores duplicados.
 
-## Blockquotes
+## 6. Gestión de desencadenantes y restricciones
 
-The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
+- Durante la restauración, se utilizaron opciones para deshabilitar los activadores y evitar problemas con restricciones de claves externas.
+- Comando utilizado: --disable-triggers para garantizar que los activadores no interfieran con la carga de datos.
 
-### Blockquote without attribution
+## 7. Consideraciones finales
 
-#### Syntax
+- Si encuentra problemas relacionados con usuarios o roles que no existen (por ejemplo, el rol "predeterminado" no existe), asegúrese de que los roles definidos en el archivo de respaldo estén presentes o use la opción --no-owner.
 
-```markdown
-> Tiam, ad mint andaepu dandae nostion secatur sequo quae.  
-> **Note** that you can use _Markdown syntax_ within a blockquote.
-```
+- Para evitar errores de permisos con disparadores del sistema, es necesario tener privilegios de superusuario o modificar la configuración de pg_hba.conf para permitir el acceso desde su IP.
 
-#### Output
-
-> Tiam, ad mint andaepu dandae nostion secatur sequo quae.  
-> **Note** that you can use _Markdown syntax_ within a blockquote.
-
-### Blockquote with attribution
-
-#### Syntax
-
-```markdown
-> Don't communicate by sharing memory, share memory by communicating.<br>
-> — <cite>Rob Pike[^1]</cite>
-```
-
-#### Output
-
-> Don't communicate by sharing memory, share memory by communicating.<br>
-> — <cite>Rob Pike[^1]</cite>
-
-[^1]: The above quote is excerpted from Rob Pike's [talk](https://www.youtube.com/watch?v=PAAkCSZUG1c) during Gopherfest, November 18, 2015.
-
-## Tables
-
-#### Syntax
-
-```markdown
-| Italics   | Bold     | Code   |
-| --------- | -------- | ------ |
-| _italics_ | **bold** | `code` |
-```
-
-#### Output
-
-| Italics   | Bold     | Code   |
-| --------- | -------- | ------ |
-| _italics_ | **bold** | `code` |
-
-## Code Blocks
-
-#### Syntax
-
-we can use 3 backticks ``` in new line and write snippet and close with 3 backticks on new line and to highlight language specific syntac, write one word of language name after first 3 backticks, for eg. html, javascript, css, markdown, typescript, txt, bash
-
-````markdown
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Example HTML5 Document</title>
-  </head>
-  <body>
-    <p>Test</p>
-  </body>
-</html>
-```
-````
-
-Output
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Example HTML5 Document</title>
-  </head>
-  <body>
-    <p>Test</p>
-  </body>
-</html>
-```
-
-## List Types
-
-### Ordered List
-
-#### Syntax
-
-```markdown
-1. First item
-2. Second item
-3. Third item
-```
-
-#### Output
-
-1. First item
-2. Second item
-3. Third item
-
-### Unordered List
-
-#### Syntax
-
-```markdown
-- List item
-- Another item
-- And another item
-```
-
-#### Output
-
-- List item
-- Another item
-- And another item
-
-### Nested list
-
-#### Syntax
-
-```markdown
-- Fruit
-  - Apple
-  - Orange
-  - Banana
-- Dairy
-  - Milk
-  - Cheese
-```
-
-#### Output
-
-- Fruit
-  - Apple
-  - Orange
-  - Banana
-- Dairy
-  - Milk
-  - Cheese
-
-## Other Elements — abbr, sub, sup, kbd, mark
-
-#### Syntax
-
-```markdown
-<abbr title="Graphics Interchange Format">GIF</abbr> is a bitmap image format.
-
-H<sub>2</sub>O
-
-X<sup>n</sup> + Y<sup>n</sup> = Z<sup>n</sup>
-
-Press <kbd><kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>Delete</kbd></kbd> to end the session.
-
-Most <mark>salamanders</mark> are nocturnal, and hunt for insects, worms, and other small creatures.
-```
-
-#### Output
-
-<abbr title="Graphics Interchange Format">GIF</abbr> is a bitmap image format.
-
-H<sub>2</sub>O
-
-X<sup>n</sup> + Y<sup>n</sup> = Z<sup>n</sup>
-
-Press <kbd><kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>Delete</kbd></kbd> to end the session.
-
-Most <mark>salamanders</mark> are nocturnal, and hunt for insects, worms, and other small creatures.
+Para obtener más información, <a hfre="https://www.postgresql.org/docs/">consulte la documentación oficial de PostgreSQL</a>.

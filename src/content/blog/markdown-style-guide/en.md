@@ -1,216 +1,69 @@
 ---
-title: 'Markdown Style Guide'
-description: 'Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.'
-pubDate: 'Jul 01 2022'
-heroImage: '/blog-placeholder-1.jpg'
-author: 'Me'
+title: 'PostgreSQL Database Migration to DigitalOcean'
+description: 'In this blog you will learn how to migrate data from the vercel database service to a Digital Ocean postgre database.'
+pubDate: 'Nov 05 2024'
+heroImage: '/blog-migrate-data/migrate-data.jpg'
+author: 'Junior Ángeles'
 lang: 'en'
 ---
 
-Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.
+In this blog you will learn how to migrate data from the vercel database service to a Digital Ocean postgre database..
 
-## Headings
+## Initial Preparations
 
-The following HTML `<h1>`—`<h6>` elements represent six levels of section headings. `<h1>` is the highest section level while `<h6>` is the lowest.
+- Understanding the backup file: The database to be migrated was in a .backup file, which included both the structure and data of the original database.
 
-# H1
+- System Requirements: Ensure that the target machine (DigitalOcean) is ready to receive the database and that the user has the necessary credentials.
 
-## H2
+## 1 Connection Configuration in pgAdmin
 
-### H3
+- Open pgAdmin and configure a new connection to the DigitalOcean server:
+  - Host name/address: Host address provided by DigitalOcean.
+  - Port: Generally, port 25060 for DigitalOcean connections.
+  - Username: doadmin (or the user that DigitalOcean provides).
+  - Password: Password provided by DigitalOcean for this user.
+  - Database: defaultdb (or the name of the database to which the data will be migrated).
 
-#### H4
+## 2 Initial Restore with pg_restore
 
-##### H5
+- An attempt was made to restore the database using the pg_restore command on the Windows command line for more control over the process:
 
-###### H6
+  - ```markdown
+    "C:\Program Files\PostgreSQL\16\bin\pg_restore.exe" --host "db-postgresql-nyc3-34698-do-user-16477646-0.f.db.ondigitalocean.com" --port "25060" --username "doadmin" --password --dbname "defaultdb" --no-owner --no-privileges --verbose "C:\Users\Junior\OneDrive\Escritorio\backup-inventori\inventori-back-5.backup"
+    ```
 
-## Paragraph
+## 3 Common Errors and Solutions
 
-Xerum, quo qui aut unt expliquam qui dolut labo. Aque venitatiusda cum, voluptionse latur sitiae dolessi aut parist aut dollo enim qui voluptate ma dolestendit peritin re plis aut quas inctum laceat est volestemque commosa as cus endigna tectur, offic to cor sequas etum rerum idem sintibus eiur? Quianimin porecus evelectur, cum que nis nust voloribus ratem aut omnimi, sitatur? Quiatem. Nam, omnis sum am facea corem alique molestrunt et eos evelece arcillit ut aut eos eos nus, sin conecerem erum fuga. Ri oditatquam, ad quibus unda veliamenimin cusam et facea ipsamus es exerum sitate dolores editium rerore eost, temped molorro ratiae volorro te reribus dolorer sperchicium faceata tiustia prat.
+- 3.1 Password Not Provided Error
 
-Itatur? Quiatae cullecum rem ent aut odis in re eossequodi nonsequ idebis ne sapicia is sinveli squiatum, core et que aut hariosam ex eat.
+  - Error: pg_restore: connection to server failed: fe_sendauth: no password supplied
+  - Solution: Use the --password option without specifying the password in the command so that pg_restore prompts you for it interactively.
 
-## Images
+- 3.2 Primary Key Constraints Error
+  - Error: duplicate key value violates unique constraint.
+  - Solution: We use the --data-only option to import only the data and --disable-triggers to avoid errors related to key restrictions. Still, if the values ​​already exist, the solution would be to delete that previously duplicated data.
 
-#### Syntax
+## 4. Command with Options to Avoid Duplicate Errors
 
-```markdown
-![Alt text](./full/or/relative/path/of/image)
-```
+- ```markdown
+  "C:\Program Files\PostgreSQL\16\bin\pg_restore.exe" --host "db-postgresql-nyc3-34698-do-user-16477646-0.f.db.ondigitalocean.com" --port "25060" --username "doadmin" --password --dbname "defaultdb" --no-owner --no-privileges --data-only --disable-triggers --verbose "C:\Users\Junior\OneDrive\Escritorio\backup-inventori\inventori-back-5.backup"
+  ```
 
-#### Output
+## 5. Using the pgAdmin Graphical Interface
 
-![blog placeholder](/blog-placeholder-about.jpg)
+- Open pgAdmin: Go to the "Restore" option from the server where you want to restore the database.
+- Select the File: In the "General" tab, select the .backup file in the "Filename" option.
+- Additional Options: In "Data Options", you can specify that you only want to import the data and disable restrictions to avoid duplicate errors.
 
-## Blockquotes
+## 6. Management of Triggers and Constraints
 
-The blockquote element represents content that is quoted from another source, optionally with a citation which must be within a `footer` or `cite` element, and optionally with in-line changes such as annotations and abbreviations.
+- During the restore, options were used to disable triggers and avoid problems with foreign key restrictions.
+- Command Used: --disable-triggers to ensure that triggers do not interfere with data loading.
 
-### Blockquote without attribution
+## 7. Final Considerations
 
-#### Syntax
+- If you encounter problems related to users or roles that do not exist (e.g. role "default" does not exist), make sure that the roles defined in the backup file are present or use the --no-owner option.
 
-```markdown
-> Tiam, ad mint andaepu dandae nostion secatur sequo quae.  
-> **Note** that you can use _Markdown syntax_ within a blockquote.
-```
+- To avoid permission errors with system triggers, it is necessary to have superuser privileges or modify the pg_hba.conf configuration to allow access from your IP.
 
-#### Output
-
-> Tiam, ad mint andaepu dandae nostion secatur sequo quae.  
-> **Note** that you can use _Markdown syntax_ within a blockquote.
-
-### Blockquote with attribution
-
-#### Syntax
-
-```markdown
-> Don't communicate by sharing memory, share memory by communicating.<br>
-> — <cite>Rob Pike[^1]</cite>
-```
-
-#### Output
-
-> Don't communicate by sharing memory, share memory by communicating.<br>
-> — <cite>Rob Pike[^1]</cite>
-
-[^1]: The above quote is excerpted from Rob Pike's [talk](https://www.youtube.com/watch?v=PAAkCSZUG1c) during Gopherfest, November 18, 2015.
-
-## Tables
-
-#### Syntax
-
-```markdown
-| Italics   | Bold     | Code   |
-| --------- | -------- | ------ |
-| _italics_ | **bold** | `code` |
-```
-
-#### Output
-
-| Italics   | Bold     | Code   |
-| --------- | -------- | ------ |
-| _italics_ | **bold** | `code` |
-
-## Code Blocks
-
-#### Syntax
-
-we can use 3 backticks ``` in new line and write snippet and close with 3 backticks on new line and to highlight language specific syntac, write one word of language name after first 3 backticks, for eg. html, javascript, css, markdown, typescript, txt, bash
-
-````markdown
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Example HTML5 Document</title>
-  </head>
-  <body>
-    <p>Test</p>
-  </body>
-</html>
-```
-````
-
-Output
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Example HTML5 Document</title>
-  </head>
-  <body>
-    <p>Test</p>
-  </body>
-</html>
-```
-
-## List Types
-
-### Ordered List
-
-#### Syntax
-
-```markdown
-1. First item
-2. Second item
-3. Third item
-```
-
-#### Output
-
-1. First item
-2. Second item
-3. Third item
-
-### Unordered List
-
-#### Syntax
-
-```markdown
-- List item
-- Another item
-- And another item
-```
-
-#### Output
-
-- List item
-- Another item
-- And another item
-
-### Nested list
-
-#### Syntax
-
-```markdown
-- Fruit
-  - Apple
-  - Orange
-  - Banana
-- Dairy
-  - Milk
-  - Cheese
-```
-
-#### Output
-
-- Fruit
-  - Apple
-  - Orange
-  - Banana
-- Dairy
-  - Milk
-  - Cheese
-
-## Other Elements — abbr, sub, sup, kbd, mark
-
-#### Syntax
-
-```markdown
-<abbr title="Graphics Interchange Format">GIF</abbr> is a bitmap image format.
-
-H<sub>2</sub>O
-
-X<sup>n</sup> + Y<sup>n</sup> = Z<sup>n</sup>
-
-Press <kbd><kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>Delete</kbd></kbd> to end the session.
-
-Most <mark>salamanders</mark> are nocturnal, and hunt for insects, worms, and other small creatures.
-```
-
-#### Output
-
-<abbr title="Graphics Interchange Format">GIF</abbr> is a bitmap image format.
-
-H<sub>2</sub>O
-
-X<sup>n</sup> + Y<sup>n</sup> = Z<sup>n</sup>
-
-Press <kbd><kbd>CTRL</kbd>+<kbd>ALT</kbd>+<kbd>Delete</kbd></kbd> to end the session.
-
-Most <mark>salamanders</mark> are nocturnal, and hunt for insects, worms, and other small creatures.
+For more information, <a hfre="https://www.postgresql.org/docs/">consult the official PostgreSQL documentation</a>.
