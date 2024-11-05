@@ -5,7 +5,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://my-blog-730.pages.dev/',
+  site: 'https://www.juniorangeles.tech/',
   vite: {
     server: {
       watch: {
