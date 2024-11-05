@@ -1,6 +1,7 @@
 ---
 import { getLangFromUrl, useTranslations } from '../../i18n/utils';
-import BlogPost from '../../layouts/BlogPost.astro';
+// import BlogPost from '../../layouts/BlogPost.astro';
+import Layout from '../../layouts/Layout.astro';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
@@ -12,20 +13,39 @@ export async function getStaticPaths() {
 }
 ---
 
-<BlogPost
+<Layout
   title={t('about.title')}
   description={t('about.description')}
   pubDate={new Date('August 23 2024')}
   heroImage='/Yo.png'
   lang={lang}
 >
-  <p
-    style={{
-      textAlign: 'justify',
-      fontSize: '1rem',
-      color: 'var(--color-secondary)',
-    }}
-  >
-    {t('about.text')}
-  </p>
-</BlogPost>
+  <h1>{t('about.title')}</h1>
+  <div>
+
+    <p>
+      {t('about.text')}
+    </p>
+    <img width={2000} height={1000} src='/Yo.png' alt='' />
+  </div>
+</Layout>
+<style>
+  div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+  p {
+    flex: 1;
+    font-size: 1rem;
+    min-width: 50%;
+    color: var(--color-secondary);
+  }
+   img {
+    max-width: 15rem;
+    width: 100%;
+
+   }
+</style>
